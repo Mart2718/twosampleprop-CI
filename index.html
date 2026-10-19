@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Two-Sample Interval Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<style>
+/* Layout: black SAC header band; three-step tab rail; Step 3 = pinned data column + A–E step tracker.
+   Palette: Santa Ana College red / black / grey / white. Single deliberate light theme.
+   Zones by shape + label, never color alone:
+     Your turn = heavy black rail · In Art of Stat = red left edge · How it works = recessed grey panel · Teacher only = dashed outline */
+:root{
+  color-scheme:light;
+  --page:#f2f2f2;      /* page ground */
+  --card:#ffffff;      /* work surfaces */
+  --recess:#e9e9e9;    /* how-it-works panels */
+  --ink:#111111;       /* text, rails, chart ink — 18.9:1 on white */
+  --muted:#595959;     /* secondary text — 7.0:1 white, 5.8:1 recess */
+  --ctl:#767676;       /* control borders — 4.5:1 white (WCAG 1.4.11) */
+  --hair:#d4d4d4;      /* decorative dividers only */
+  --red:#c8102e;       /* SAC red — 5.9:1 on white; text use on light surfaces only */
+  --onred:#ffffff;
+  --sans:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"DM Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --fs:16px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{font-size:var(--fs)}
+body{background:var(--page);color:var(--ink);font-family:var(--sans);font-size:1rem;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body.class-mode{--fs:20px}
+.wrap{max-width:1120px;margin:0 auto;padding-block:16px 32px}
+#p1,#p2{max-width:920px}
+a{color:var(--red);text-underline-offset:2px}
+a:hover{color:var(--ink)}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px;border-radius:6px}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.2;margin:0}
+p{margin:0}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.ico{width:1em;height:1em;vertical-align:-.12em;margin-right:.3em;flex:none}
+
+/* header band */
+.top{background:var(--ink);color:#fff;border-radius:12px;border-bottom:5px solid var(--red);padding:16px 18px;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between}
+.top :focus-visible{outline-color:#fff}
+.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#bdbdbd;font-weight:700}
+h1{font-size:1.75rem;font-weight:700;margin-top:4px}
+h1 .mono{font-weight:400;color:#bdbdbd;font-size:1.05rem}
+.modes{display:flex;gap:8px;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid #8a8a8a;border-radius:999px;overflow:hidden}
+.seg button{background:transparent;border:0;color:#fff;font:inherit;font-size:.85rem;padding:6px 14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink);font-weight:700}
+
+/* step rail */
+.rail{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0 18px}
+.rail button{background:var(--card);border:1px solid var(--ctl);border-radius:10px;color:var(--muted);font:inherit;text-align:left;padding:10px 12px 12px;cursor:pointer;min-width:0;border-bottom-width:4px}
+.rail button b{display:block;color:var(--ink);font-size:.95rem}
+.rail button small{font-size:.78rem;display:block}
+.rail .n{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.rail .prog{font-family:var(--mono);font-size:.75rem;color:var(--ink);display:block;margin-top:2px}
+.rail button[aria-selected="true"]{background:var(--ink);border-color:var(--ink);border-bottom-color:var(--red);color:#bdbdbd}
+.rail button[aria-selected="true"] b,.rail button[aria-selected="true"] .prog{color:#fff}
+.rail button[aria-selected="true"] .n{color:#bdbdbd}
+@media (max-width:560px){.rail button small{display:none}}
+
+section[role="tabpanel"]{display:grid;gap:16px}
+section[role="tabpanel"]>*,.card>*,.pgrid>*,.pwork>*,.stepbox>*,details>*,.zone>*{min-width:0}
+details,.zone,.fb{min-width:0;max-width:100%}
+.pdata th{white-space:normal}
+section[role="tabpanel"]:focus-visible{outline-offset:6px}
+.intro{color:var(--muted);max-width:68ch}
+.intro strong{color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--hair);border-radius:12px;padding:18px;display:grid;gap:14px;min-width:0}
+.card h3{font-size:1.15rem}
+.card h4{font-size:1rem}
+
+/* zones */
+.ztag{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.zone{border-radius:10px;padding:12px 14px;display:grid;gap:10px;min-width:0}
+.zone.turn{border-left:5px solid var(--ink);background:var(--card)}
+.zone.turn>.ztag{color:var(--ink)}
+.zone.aos,.aos{border:1px solid var(--hair);border-left:5px solid var(--red);background:var(--card);border-radius:10px;padding:12px 14px;display:grid;gap:10px;min-width:0}
+.aos .ztag,.zone.aos .ztag{color:var(--red)}
+.zone.how{background:var(--recess);border:0}
+details.how{background:var(--recess);border:0}
+.card.aos{border-left:6px solid var(--red)}
+.card.how{background:var(--recess);border-color:var(--recess)}
+
+.chip{display:inline-block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid var(--ctl);color:var(--muted)}
+.chip.hot{color:var(--red);border:2px solid var(--red)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.spread{justify-content:space-between}
+.q{font-weight:700}
+.btn{font:inherit;font-size:.95rem;border-radius:8px;padding:8px 14px;cursor:pointer;border:1px solid var(--ctl);background:var(--card);color:var(--ink)}
+.btn:hover{border-color:var(--ink);background:var(--page)}
+.btn:disabled{color:var(--muted);border-style:dashed;cursor:not-allowed;background:var(--card)}
+.btn.primary{background:var(--red);color:var(--onred);border-color:var(--red);font-weight:700}
+.btn.primary:hover{background:#a50d26}
+.btn.primary:disabled{background:var(--card);color:var(--muted);border-color:var(--ctl)}
+.btn.pick[aria-pressed="true"],.btn.teal[aria-pressed="true"],.btn.gold[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:700}
+.ax-t,.ax-g{color:var(--ink);font-weight:700;white-space:nowrap}
+
+/* 2x2 procedure grid */
+.grid2{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;font-size:.9rem}
+.grid2 .h{color:var(--ink);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;display:flex;align-items:flex-end;padding:2px 4px}
+.grid2 .h.t{align-items:center}
+.cell{border:1px dashed var(--ctl);border-radius:8px;padding:10px;color:var(--muted);min-width:0;background:var(--card)}
+.cell.on{border:2px solid var(--ink);color:var(--ink);background:var(--page);font-weight:700}
+.cell.ans{border:3px solid var(--ink);color:var(--ink);font-weight:700}
+
+.scen{font-size:1.05rem;max-width:68ch}
+/* feedback: shape + icon + words (red is the brand, never "wrong") */
+.fb{border-radius:10px;padding:12px 14px;display:grid;gap:6px;border:1px solid var(--hair);background:var(--card)}
+.fb .tag{font-weight:700}
+.fb.ok{border:2px solid var(--ink)}
+.fb.no{border:2px dashed var(--muted);background:var(--page)}
+.mark-ok{color:var(--ink);font-weight:700} .mark-no{color:var(--muted);font-weight:700}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dot{width:28px;height:28px;border-radius:50%;border:1px solid var(--ctl);background:var(--card);color:var(--muted);font:500 .75rem var(--mono);cursor:pointer;padding:0}
+.dot.cur{border:3px solid var(--red);color:var(--ink)}
+.dot.r{background:var(--ink);color:#fff;border-color:var(--ink)}
+.dot.r.cur{border-color:var(--red)}
+.dot.w{border:2px dashed var(--ink);color:var(--ink)}
+.score{font-family:var(--mono);color:var(--muted);font-size:.85rem}
+body.class-mode .score{display:none}
+
+/* how-to */
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:16px}
+ol.steps{margin:0;padding-left:1.4em;display:grid;gap:8px}
+ol.steps li::marker{font-family:var(--mono);color:var(--red);font-weight:500}
+.kbd{font-family:var(--mono);font-size:.85em;background:var(--page);border:1px solid var(--ctl);border-radius:5px;padding:0 5px;white-space:nowrap}
+.vid{display:grid;gap:2px;border-left:3px solid var(--red);padding-left:10px}
+.vid a{font-weight:700}
+.vid small{color:var(--muted)}
+.order{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:10px}
+.order div{background:var(--card);border:1px solid var(--hair);border-radius:8px;padding:10px;font-size:.92rem}
+details{border:1px solid var(--hair);border-radius:10px;padding:10px 14px;background:var(--card)}
+summary{cursor:pointer;font-weight:700}
+details[open] summary{margin-bottom:8px}
+.formula{font-family:var(--mono);font-size:.92rem;background:var(--card);border-radius:8px;padding:10px;overflow-x:auto;white-space:nowrap}
+
+/* compute layout */
+.plist{display:flex;gap:8px;flex-wrap:wrap}
+.plist button{font:inherit;font-size:.85rem;background:var(--card);border:1px solid var(--ctl);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer}
+.plist button:hover{border-color:var(--ink)}
+.plist button[aria-current="true"]{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:700}
+.pgrid{display:grid;gap:18px}
+.pdata{display:grid;gap:12px;align-content:start;min-width:0}
+.pwork{display:grid;gap:14px;min-width:0}
+@media (min-width:1000px){
+  .pgrid{grid-template-columns:minmax(0,380px) minmax(0,1fr);align-items:start}
+  .pdata{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--card);border-right:1px solid var(--hair);padding-right:18px}
+}
+.tbl-wrap{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--hair);white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* A–E tracker */
+ol.tracker{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.stepbox{position:relative;padding:0 0 22px 46px;display:grid;gap:10px;min-width:0}
+.stepbox::before{content:"";position:absolute;left:15px;top:32px;bottom:0;width:3px;background:var(--ink)}
+.stepbox:last-child::before{display:none}
+.stepbox .node{position:absolute;left:0;top:0;width:33px;height:33px;border-radius:50%;display:grid;place-items:center;font:500 .9rem var(--mono);background:var(--card);border:3px solid var(--ink);color:var(--ink)}
+.stepbox.done .node{background:var(--ink);color:#fff}
+.stepbox[aria-current="step"] .node{border-color:var(--red);background:var(--red);color:#fff}
+.stepbox .lab{margin:0;font-size:1rem;padding-top:5px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.stepbox .lab .state{font:500 .72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.inputs{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.inputs label{display:grid;gap:4px;font-size:.85rem;color:var(--muted);font-weight:700}
+.inputs input{font:500 1rem var(--mono);width:9.5em;max-width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--ctl);background:var(--card);color:var(--ink)}
+textarea{font:inherit;width:100%;min-height:5em;padding:10px;border-radius:8px;border:1px solid var(--ctl);background:var(--card);color:var(--ink)}
+.sentence{font-size:1.02rem;border-left:4px solid var(--red);padding-left:12px;max-width:68ch}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.nl svg{width:100%;height:auto;display:block}
+
+/* curve + how-it-works */
+.curve{display:grid;gap:6px;margin:0}
+.curve svg{width:100%;height:auto;display:block;background:var(--card);border-radius:8px}
+.curve .cap{font-size:.85rem;color:var(--muted)}
+.curve .cap b{color:var(--ink);font-family:var(--mono);font-weight:500}
+.how-got{font-family:var(--mono);font-size:.9rem;background:var(--card);border-radius:8px;padding:10px 12px;overflow-x:auto;display:grid;gap:4px}
+.how-got .row{white-space:nowrap;flex-wrap:nowrap}
+.how-got .k{color:var(--muted);min-width:9.5em;display:inline-block}
+
+/* Art of Stat inputs card */
+.aos h4{font-size:.95rem}
+.aos dl{display:grid;grid-template-columns:minmax(0,max-content) 1fr;gap:6px 12px;margin:0;align-items:center}
+.aos dt{color:var(--muted);font-size:.85rem}
+.aos dd{margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-width:0}
+.aos dd .mono{font-size:.95rem}
+.copy{font:inherit;font-size:.75rem;padding:2px 8px;border-radius:6px;border:1px solid var(--ctl);background:var(--card);color:var(--ink);cursor:pointer}
+.copy:hover{border-color:var(--ink);background:var(--page)}
+.linkbar{display:flex;flex-wrap:wrap;gap:8px}
+.linkbar a{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--ctl);border-left:4px solid var(--red);border-radius:8px;padding:7px 12px;text-decoration:none;color:var(--ink);background:var(--card);font-size:.9rem;font-weight:700}
+.linkbar a:hover{border-color:var(--ink);border-left-color:var(--red)}
+.linkbar a span{color:var(--muted);font-size:.8rem;font-weight:400}
+
+/* teacher-only */
+.tkey{display:none;border:2px dashed var(--ink);border-radius:10px;padding:12px;background:var(--card);font-size:.9rem}
+body.teacher .tkey{display:grid;gap:8px}
+.tkey .lab{color:var(--ink);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+
+.skip{position:absolute;left:max(16px,env(safe-area-inset-left,0px));top:-60px;background:var(--ink);color:#fff;padding:8px 14px;border-radius:8px;font-weight:700;z-index:20}
+.skip:focus{top:calc(8px + env(safe-area-inset-top,0px));outline-color:var(--red)}
+main:focus{outline:none}
+footer{margin-top:28px;padding-top:14px;border-top:3px solid var(--ink);color:var(--muted);font-size:.82rem;display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:space-between}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:no-preference){.fb{animation:rise .18s ease-out}@keyframes rise{from{transform:translateY(4px);opacity:.6}to{transform:none;opacity:1}}}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to the lab</a>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">STAT C1000 · Comparing Two Groups</div>
+      <h1>Two-Sample Interval Lab <span class="mono">p₁ − p₂ · μ₁ − μ₂</span></h1>
+    </div>
+    <div class="modes">
+      <div class="seg" role="group" aria-label="View mode">
+        <button type="button" id="m-student" aria-pressed="true">Student</button>
+        <button type="button" id="m-teacher" aria-pressed="false">Teacher</button>
+      </div>
+      <div class="seg" role="group" aria-label="Class mode">
+        <button type="button" id="m-class" aria-pressed="false">Class mode</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+  <nav class="rail" role="tablist" aria-label="Lab steps">
+    <button type="button" role="tab" id="t1" aria-controls="p1" aria-selected="true"><span class="n">Step 1</span><b>Choose the procedure</b><small>Read a scenario, find the clues</small><span class="prog" id="prog1">0/12 answered</span></button>
+    <button type="button" role="tab" id="t2" aria-controls="p2" aria-selected="false" tabindex="-1"><span class="n">Step 2</span><b>Art of Stat how-to</b><small>Where every number goes</small></button>
+    <button type="button" role="tab" id="t3" aria-controls="p3" aria-selected="false" tabindex="-1"><span class="n">Step 3</span><b>Compute &amp; interpret</b><small>Run it, check it, explain it</small><span class="prog" id="prog3">0/6 solved</span></button>
+  </nav>
+
+  <!-- STEP 1 -->
+  <section role="tabpanel" id="p1" aria-labelledby="t1" tabindex="0">
+    <h2 class="sr">Step 1: Choose the procedure</h2>
+    <p class="intro">Every interval in this unit starts with two questions. <span class="ax-t"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 2h6l6 6-6 6-6-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="5.6" cy="5.6" r="1.3" fill="currentColor"/></svg>What kind of variable</span> did we measure on each person? <span class="ax-g"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="5.5" cy="8" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="10.5" cy="8" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>How many groups</span> are we estimating? Answer both, and the procedure falls into place. Some scenarios use a one-sample procedure on purpose, so read carefully.</p>
+    <div class="card" id="scen-card"></div>
+    <details>
+      <summary>Quick reference: the four procedures</summary>
+      <div class="tbl-wrap" tabindex="0" role="region" aria-label="Procedure reference table"><table>
+        <thead><tr><th></th><th>One group</th><th>Two groups</th></tr></thead>
+        <tbody>
+          <tr><td class="ax-t"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 2h6l6 6-6 6-6-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="5.6" cy="5.6" r="1.3" fill="currentColor"/></svg>Categorical<br><span class="muted small">count yes/no, summarize with p̂</span></td><td>1-Proportion Z-Interval<br><span class="muted small">Inference for a Proportion</span></td><td>2-Proportion Z-Interval<br><span class="muted small">Compare Two Proportions</span></td></tr>
+          <tr><td class="ax-t"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 2h6l6 6-6 6-6-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="5.6" cy="5.6" r="1.3" fill="currentColor"/></svg>Quantitative<br><span class="muted small">measure a number, summarize with x̄</span></td><td>1-Sample T-Interval<br><span class="muted small">Inference for a Mean</span></td><td>2-Sample T-Interval<br><span class="muted small">Compare Two Means</span></td></tr>
+        </tbody>
+      </table></div>
+    </details>
+  </section>
+
+  <!-- STEP 2 -->
+  <section role="tabpanel" id="p2" aria-labelledby="t2" tabindex="0" hidden>
+    <h2 class="sr">Step 2: Art of Stat how-to</h2>
+    <p class="intro">Art of Stat does the arithmetic. <strong>Your job is to give it the right numbers in the right order and read the output correctly.</strong> Open the app in a new tab and keep this page open next to it.</p>
+    <nav class="linkbar" aria-label="Art of Stat resources">
+      <a id="lb-hub" target="_blank" rel="noopener">Art of Stat Student Hub <span>step-by-step guide ↗</span></a>
+      <a id="lb-list" target="_blank" rel="noopener">Video playlist <span>YouTube ↗</span></a>
+      <a id="lb-apps" target="_blank" rel="noopener">Art of Stat web apps <span>all apps ↗</span></a>
+    </nav>
+
+    <p class="small muted" aria-hidden="false"><b class="ztag" style="color:var(--ink)">Your turn</b> black markers · <b class="ztag" style="color:var(--red)">In Art of Stat</b> red edge · <b class="ztag">How it works</b> grey panel</p>
+    <div class="card how">
+      <span class="ztag">How it works</span>
+      <h3>Decide which group is Group 1</h3>
+      <p>Art of Stat always computes <span class="mono">Group 1 − Group 2</span>. The order you enter the groups decides the sign of the answer.</p>
+      <div class="order">
+        <div><b>Peer Coach first:</b><br><span class="mono">p₁ − p₂ = 0.750 − 0.641 = +0.109</span><br><span class="muted small">Positive: the Peer Coach group is higher.</span></div>
+        <div><b>No Peer Coach first:</b><br><span class="mono">p₁ − p₂ = 0.641 − 0.750 = −0.109</span><br><span class="muted small">Negative: the same fact, said the other way.</span></div>
+      </div>
+      <p class="muted small">Both orders are fine. Use the order the problem gives, and say it in your interpretation.</p>
+    </div>
+
+    <div class="how">
+      <div class="card aos">
+        <span class="ztag">In Art of Stat ↗</span>
+        <div class="row spread"><h3>2-Proportion Z-Interval</h3><span class="chip">Categorical · 2 groups</span></div>
+        <p class="muted small">You need: number of successes (<span class="mono">x</span>) and sample size (<span class="mono">n</span>) for each group.</p>
+        <ol class="steps">
+          <li>Open <a id="lnk-2prop" target="_blank" rel="noopener">Compare Two Proportions ↗</a>. Click the <span class="kbd">Confidence Interval &amp; Significance Test</span> tab.</li>
+          <li>Under <span class="kbd">Enter Data</span>, choose <span class="kbd">Number of Successes</span>. This is for summarized data, which is what we use in class. <span class="muted">(<span class="kbd">Individual Observations</span> is only for raw data.)</span></li>
+          <li>Type the Group 1 name, number of successes, and sample size. Then do the same for Group 2.</li>
+          <li>Under <span class="kbd">Type of Inference</span>, choose <span class="kbd">Confidence Interval</span>.</li>
+          <li>Under <span class="kbd">Type of Interval</span>, choose <span class="kbd">Wald</span>. This is our course standard.</li>
+          <li>Type the <span class="kbd">Confidence Level (%)</span> as a whole number, such as <span class="mono">95</span>.</li>
+          <li>Read the <b>Lower Bound</b> and <b>Upper Bound</b>. They are on the proportion scale, so 0.0523 means 5.23 percentage points.</li>
+        </ol>
+        <div class="vid"><a id="v-2prop" target="_blank" rel="noopener"></a><small>Watch from 2:48 for the interval steps.</small></div>
+      </div>
+
+      <div class="card aos">
+        <span class="ztag">In Art of Stat ↗</span>
+        <div class="row spread"><h3>2-Sample T-Interval</h3><span class="chip">Quantitative · 2 groups</span></div>
+        <p class="muted small">You need: mean (<span class="mono">x̄</span>), standard deviation (<span class="mono">s</span>), and sample size (<span class="mono">n</span>) for each group.</p>
+        <ol class="steps">
+          <li>Open <a id="lnk-2mean" target="_blank" rel="noopener">Compare Two Means ↗</a>. Click the <span class="kbd">Confidence Interval &amp; Significance Test</span> tab.</li>
+          <li>Under <span class="kbd">Enter Data</span>, choose <span class="kbd">Summary Statistics</span>. This is what we use in class. <span class="muted">(<span class="kbd">Your Own</span> is only for raw data.)</span></li>
+          <li>For each group, type the name, sample size, sample mean, and standard deviation. Group 1 goes first.</li>
+          <li>Under <span class="kbd">Type of Inference</span>, choose <span class="kbd">Confidence Interval</span>. Keep it <span class="kbd">Two-Sided</span>.</li>
+          <li>Leave the <b>equal variances</b> box unchecked.</li>
+          <li>Type the <span class="kbd">Confidence Level (%)</span>, such as <span class="mono">95</span>.</li>
+          <li>Read the <b>Lower Bound</b> and <b>Upper Bound</b>. The degrees of freedom may be a decimal like 80.88. That is normal for this method.</li>
+        </ol>
+        <div class="vid"><a id="v-2mean" target="_blank" rel="noopener"></a><small>This video runs a test. Use the same app and inputs, then choose Confidence Interval.</small></div>
+      </div>
+    </div>
+
+    <details>
+      <summary>One-sample procedures (for the distractors in Step 1)</summary>
+      <div class="grid" style="display:grid;gap:10px">
+        <div class="vid"><a id="v-1prop" target="_blank" rel="noopener"></a><small>Inference for a Proportion · Wald interval</small></div>
+        <div class="vid"><a id="v-1mean" target="_blank" rel="noopener"></a><small>Inference for a Mean</small></div>
+        <div class="vid"><a id="v-list" target="_blank" rel="noopener"></a><small>All Art of Stat videos for this course</small></div>
+        <div class="vid"><a id="v-hub" target="_blank" rel="noopener">Art of Stat Student Hub</a><small>Step-by-step guide for every app we use</small></div>
+      </div>
+    </details>
+
+    <details class="how">
+      <summary>How it works: what Art of Stat is computing</summary>
+      <p class="small muted">Every interval has the same shape: <b>estimate ± (critical value) × (standard error)</b>.</p>
+      <div class="formula" role="math" aria-label="Two proportion interval: p hat 1 minus p hat 2, plus or minus z star times the square root of p hat 1 times one minus p hat 1 over n 1 plus p hat 2 times one minus p hat 2 over n 2">(p̂₁ − p̂₂) ± z* · √[ p̂₁(1−p̂₁)/n₁ + p̂₂(1−p̂₂)/n₂ ]</div>
+      <div class="formula" role="math" aria-label="Two sample t interval: x bar 1 minus x bar 2, plus or minus t star times the square root of s 1 squared over n 1 plus s 2 squared over n 2">(x̄₁ − x̄₂) ± t* · √[ s₁²/n₁ + s₂²/n₂ ]</div>
+      <p class="small muted">z* is 1.645, 1.960, or 2.576 for 90%, 95%, or 99%. The t* value depends on the degrees of freedom, which Art of Stat finds for you.</p>
+    </details>
+
+    <details class="how">
+      <summary>How it works: connect to hypothesis tests (Unit 11)</summary>
+      <div style="display:grid;gap:8px">
+        <p><b>Proportions use a different standard error for intervals and tests.</b> An interval estimates p₁ − p₂, so it uses each group’s own p̂ (unpooled). A test assumes H₀: p₁ = p₂, so it combines both groups into one pooled proportion, p̂ = (x₁ + x₂) / (n₁ + n₂).</p>
+        <p><b>Means use the same unpooled standard error for both.</b> Art of Stat’s two-sample t-interval and t-test both use s₁²/n₁ + s₂²/n₂.</p>
+        <p><b>Intervals and two-sided tests agree.</b> If a C% interval for the difference does not contain 0, a two-sided test at α = 1 − C would reject H₀: no difference. If 0 is inside the interval, that test would not reject.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- STEP 3 -->
+  <section role="tabpanel" id="p3" aria-labelledby="t3" tabindex="0" hidden>
+    <h2 class="sr">Step 3: Compute and interpret</h2>
+    <p class="intro">Each problem gives you summarized data. Pick the app, check the sample size, choose a confidence level, and run it in Art of Stat. Then type the bounds here. <strong>When you finish one level, try another.</strong> Watch what happens to the width, and sometimes to the conclusion.</p>
+    <p class="small muted" aria-hidden="false"><b class="ztag" style="color:var(--ink)">Your turn</b> black markers · <b class="ztag" style="color:var(--red)">In Art of Stat</b> red edge · <b class="ztag">How it works</b> grey panel</p>
+    <div class="plist" id="plist" role="group" aria-label="Practice problems"></div>
+    <div class="card" id="prob-card"></div>
+  </section>
+
+  </main>
+  <div id="live" class="sr" role="status" aria-live="polite"></div>
+
+  <footer>
+    <span>STAT C1000 · Two-Sample Interval Lab · <span class="mono">v1.4</span></span>
+    <span>Built for Santa Ana College</span>
+  </footer>
+</div>
+
+<script>
+/* ===================== CONFIG ===================== */
+const LINKS={
+  apps:'https://artofstat.com/web-apps',
+  twoProp:'https://istats.shinyapps.io/2sample_prop/',
+  twoMean:'https://istats.shinyapps.io/2sample_mean/',
+  hub:'https://artofstatguide.netlify.app/'
+};
+const VIDEOS={
+  twoProp:{title:'2prop Z Interval',url:'https://youtu.be/uH9e6ktiy2Y?t=168'},
+  twoMean:{title:'Art of Stat 2 Sample T-Test',url:'https://youtu.be/OsePK0_4R6E'},
+  oneProp:{title:'1 Prop Z Interval – Art of Stat',url:'https://youtu.be/Etk615NLyB8'},
+  oneMean:{title:'1 Sample T Interval – Art of Stat',url:'https://youtu.be/lUk4R-oL1o4'},
+  playlist:{title:'Art of Stat playlist',url:'https://www.youtube.com/playlist?list=PLv2gjowtY4RbWe9nxuXoskB_i_x6Uysk1'}
+};
+
+/* ===================== STATS (validated against SciPy) ===================== */
+function normInv(p){const a=[-39.69683028665376,220.9460984245205,-275.9285104469687,138.357751867269,-30.66479806614716,2.506628277459239],b=[-54.47609879822406,161.5858368580409,-155.6989798598866,66.80131188771972,-13.28068155288572],c=[-0.007784894002430293,-0.3223964580411365,-2.400758277161838,-2.549732539343734,4.374664141464968,2.938163982698783],d=[0.007784695709041462,0.3224671290700398,2.445134137142996,3.754408661907416];const pl=0.02425;let q,r;if(p<pl){q=Math.sqrt(-2*Math.log(p));return(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}if(p>1-pl){q=Math.sqrt(-2*Math.log(1-p));return-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}q=p-0.5;r=q*q;return(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}
+function lgamma(x){const g=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];let y=x,t=x+5.5;t-=(x+0.5)*Math.log(t);let s=1.000000000190015;for(let j=0;j<6;j++)s+=g[j]/++y;return -t+Math.log(2.5066282746310005*s/x);}
+function betacf(a,b,x){let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;if(Math.abs(d)<1e-30)d=1e-30;d=1/d;let h=d;for(let m=1;m<=300;m++){let m2=2*m,aa=m*(b-m)*x/((qam+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<1e-30)d=1e-30;c=1+aa/c;if(Math.abs(c)<1e-30)c=1e-30;d=1/d;h*=d*c;aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));d=1+aa*d;if(Math.abs(d)<1e-30)d=1e-30;c=1+aa/c;if(Math.abs(c)<1e-30)c=1e-30;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<3e-14)break;}return h;}
+function ibeta(x,a,b){if(x<=0)return 0;if(x>=1)return 1;const bt=Math.exp(lgamma(a+b)-lgamma(a)-lgamma(b)+a*Math.log(x)+b*Math.log(1-x));return x<(a+1)/(a+b+2)?bt*betacf(a,b,x)/a:1-bt*betacf(b,a,1-x)/b;}
+function tCDF(t,df){const x=df/(df+t*t);const p=0.5*ibeta(x,df/2,0.5);return t>0?1-p:p;}
+function tInv(p,df){let lo=-100,hi=100;for(let i=0;i<200;i++){const m=(lo+hi)/2;if(tCDF(m,df)<p)lo=m;else hi=m;}return(lo+hi)/2;}
+function zStar(L){return normInv(1-(1-L)/2);}
+function twoPropWald(x1,n1,x2,n2,L){const p1=x1/n1,p2=x2/n2,se=Math.sqrt(p1*(1-p1)/n1+p2*(1-p2)/n2),z=zStar(L),d=p1-p2;return{est:d,se,crit:z,me:z*se,lo:d-z*se,hi:d+z*se};}
+function twoPropAC(x1,n1,x2,n2,L){return twoPropWald(x1+1,n1+2,x2+1,n2+2,L);}
+function welch(m1,s1,n1,m2,s2,n2,L){const v1=s1*s1/n1,v2=s2*s2/n2,se=Math.sqrt(v1+v2),df=(v1+v2)**2/(v1*v1/(n1-1)+v2*v2/(n2-1)),t=tInv(1-(1-L)/2,df),d=m1-m2;return{est:d,se,df,crit:t,me:t*se,lo:d-t*se,hi:d+t*se};}
+function pooled(m1,s1,n1,m2,s2,n2,L){const df=n1+n2-2,sp=Math.sqrt(((n1-1)*s1*s1+(n2-1)*s2*s2)/df),se=sp*Math.sqrt(1/n1+1/n2),t=tInv(1-(1-L)/2,df),d=m1-m2;return{est:d,se,df,crit:t,me:t*se,lo:d-t*se,hi:d+t*se};}
+
+/* ===================== STEP 1 DATA ===================== */
+const PROC={
+  'cat-1':{name:'1-Proportion Z-Interval',app:'Inference for a Proportion',video:'oneProp'},
+  'cat-2':{name:'2-Proportion Z-Interval',app:'Compare Two Proportions',video:'twoProp'},
+  'quant-1':{name:'1-Sample T-Interval',app:'Inference for a Mean',video:'oneMean'},
+  'quant-2':{name:'2-Sample T-Interval',app:'Compare Two Means',video:'twoMean'}
+};
+const SCEN=[
+ {tier:'Core',v:'cat',g:2,text:'A college wants to estimate how much the pass rate differs between statistics sections with an embedded Peer Coach and sections without one. It randomly samples student records from each type of section and notes whether each student passed.',
+  cv:'Each student either passed or did not. That is a yes/no category, so we count and use proportions.',cg:'Two separate groups: sections with a Peer Coach and sections without one.'},
+ {tier:'Core',v:'quant',g:2,text:'A transportation researcher randomly samples students at Santa Ana College and at Santiago Canyon College and records each student’s one-way commute time in minutes. She wants to estimate the difference in average commute time.',
+  cv:'Commute time in minutes is a number you can average.',cg:'Two colleges, two independent samples.'},
+ {tier:'Core',v:'cat',g:1,text:'Student government surveys a random sample of 350 SAC students and asks, “Do you work 20 or more hours per week?” They want to estimate the percent of all SAC students who do.',
+  cv:'Each answer is yes or no.',cg:'One sample from one population. Nobody is being compared.'},
+ {tier:'Core',v:'quant',g:1,text:'A counselor records how many hours of sleep a random sample of 60 first-year students got the night before. She wants to estimate the average hours of sleep for all first-year students.',
+  cv:'Hours of sleep is a measured number.',cg:'One group of first-year students.'},
+ {tier:'Core',v:'cat',g:2,text:'A survey firm randomly samples adults ages 18–29 and adults ages 30–49 and asks each person whether they regularly get news on TikTok. The firm wants to estimate how different the two age groups are.',
+  cv:'Each person answers yes or no.',cg:'Two age groups, sampled separately.'},
+ {tier:'Core',v:'quant',g:2,text:'A tech writer randomly samples iPhone users and Android users and records how many gigabytes (GB) of mobile data each person used last month. She wants to estimate the difference in mean data use.',
+  cv:'GB of data is a measured number.',cg:'Two groups: iPhone users and Android users.'},
+ {tier:'HOT',v:'quant',g:2,text:'Housing advocates randomly sample renters in Santa Ana and in Irvine. For each renter they record the percent of monthly income that goes to rent (for example, 42%). They want to estimate the difference between the two cities.',
+  cv:'The word “percent” is a trap. Each renter gives a number, like 42%, and you can average those numbers. The variable is quantitative, so we compare mean percents.',cg:'Two cities, two samples.'},
+ {tier:'HOT',v:'cat',g:1,text:'A random sample of 400 SAC students is asked, “Do you prefer hybrid classes or fully in-person classes?” The college wants to estimate the proportion of all students who prefer hybrid.',
+  cv:'Each student picks one of two categories.',cg:'Two answer choices are not two groups. Everyone comes from one sample.'},
+ {tier:'HOT',v:'cat',g:2,text:'A researcher compares students who take mostly morning classes with students who take mostly evening classes. Random samples from each group answer yes or no: “Do you often feel stressed about deadlines?” She wants to estimate the difference between the groups.',
+  cv:'“Compare” does not always mean averages. The response is yes/no, so we compare proportions.',cg:'Morning students and evening students are two separate groups.'},
+ {tier:'HOT',v:'quant',g:1,text:'A dean randomly samples 120 SAC students, some full-time and some part-time, and records how many units each is taking. She wants to estimate the mean number of units for all SAC students.',
+  cv:'Units is a number you can average.',cg:'Full-time and part-time students are mentioned, but the question does not compare them. One population, one mean.'},
+ {tier:'HOT',v:'quant',g:2,text:'A baseball analyst takes random samples of batted balls from two hitters and records the exit velocity of each ball in mph. He wants to estimate how much harder one hitter hits the ball, on average.',
+  cv:'Exit velocity in mph is measured on every ball.',cg:'Two hitters, two independent samples of batted balls.'},
+ {tier:'HOT',v:'cat',g:1,text:'In a women’s soccer league, a coach randomly selects 150 penalty kicks from last season and records whether each one was scored. She wants to estimate the league’s penalty-kick success rate.',
+  cv:'“Success rate” sounds like a number, but each kick is either scored or not. That is a category.',cg:'One league, one sample of kicks.'}
+];
+
+/* ===================== STEP 3 DATA ===================== */
+const PROBS=[
+ {id:1,tier:'Core',type:'prop',title:'Peer Coach pass rates',
+  text:'A college compares pass rates in statistics sections with and without an embedded Peer Coach. It took random samples of student records from each type of section.',
+  g1:'With Peer Coach',g2:'Without Peer Coach',param:'pass rates',x1:159,n1:212,x2:127,n2:198,tol:0.005},
+ {id:2,tier:'Core',type:'mean',title:'Sleep and work hours',
+  text:'A counselor randomly samples students who work 20 or more hours per week and students who work fewer hours. She records hours of sleep on a typical school night.',
+  g1:'Work 20+ hrs',g2:'Work under 20 hrs',param:'mean hours of sleep',unit:'hours',m1:6.1,s1:1.3,n1:52,m2:6.9,s2:1.1,n2:47,tol:0.03},
+ {id:3,tier:'Core',type:'prop',title:'News on TikTok',
+  text:'A survey firm randomly sampled adults ages 18–29 and ages 30–49 and asked whether they regularly get news on TikTok.',
+  g1:'Ages 18–29',g2:'Ages 30–49',param:'proportions who regularly get news on TikTok',x1:312,n1:600,x2:198,n2:650,tol:0.005},
+ {id:4,tier:'HOT',type:'mean',title:'Commute times',
+  text:'A researcher randomly sampled students at Santa Ana College (SAC) and Santiago Canyon College (SCC) and recorded one-way commute times in minutes.',
+  g1:'SAC',g2:'SCC',param:'mean commute times',unit:'minutes',m1:27.4,s1:12.1,n1:45,m2:22.9,s2:10.6,n2:38,tol:0.06},
+ {id:5,tier:'HOT',type:'prop',title:'Deadline stress',
+  text:'Random samples of students who work 20 or more hours per week and students who work fewer hours were asked, “Do you often feel stressed about deadlines?”',
+  g1:'Work 20+ hrs',g2:'Work under 20 hrs',param:'proportions who often feel stressed about deadlines',x1:88,n1:160,x2:94,n2:190,tol:0.005},
+ {id:6,tier:'HOT',type:'mean',title:'Exit velocity',
+  text:'An analyst took random samples of batted balls from two hitters and recorded exit velocity in mph.',
+  g1:'Hitter A',g2:'Hitter B',param:'mean exit velocities',unit:'mph',m1:91.2,s1:8.4,n1:35,m2:89.6,s2:9.1,n2:40,tol:0.06}
+];
+const LEVELS=[0.90,0.95,0.99];
+function key(p,L){return p.type==='prop'?twoPropWald(p.x1,p.n1,p.x2,p.n2,L):welch(p.m1,p.s1,p.n1,p.m2,p.s2,p.n2,L);}
+function alt(p,L){return p.type==='prop'?twoPropAC(p.x1,p.n1,p.x2,p.n2,L):pooled(p.m1,p.s1,p.n1,p.m2,p.s2,p.n2,L);}
+function dp(p){return p.type==='prop'?3:2;}
+function f(v,d){const s=Number(v).toFixed(d);return s==='-0'+(d?'.'+'0'.repeat(d):'')?s.slice(1):s;}
+function pct(L){return Math.round(L*100);}
+
+/* ===================== HELPERS ===================== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function say(msg){const l=$('#live');l.textContent='';setTimeout(()=>{l.textContent=msg;},30);}
+function fb(ok,tag,body){const ic=ok===true?'✓':ok===false?'✗':'•',sr=ok===true?'Correct. ':ok===false?'Not yet. ':'';return `<div class="fb ${ok===true?'ok':ok===false?'no':''}"><span class="tag"><span aria-hidden="true">${ic} </span><span class="sr">${sr}</span><span class="t">${tag}</span></span>${body?`<div>${body}</div>`:''}</div>`;}
+function vlink(k){const v=VIDEOS[k];return `<a href="${v.url}" target="_blank" rel="noopener">▶ ${esc(v.title)}</a>`;}
+
+/* ===================== MODES & TABS ===================== */
+function setMode(teacher){document.body.classList.toggle('teacher',teacher);$('#m-teacher').setAttribute('aria-pressed',teacher);$('#m-student').setAttribute('aria-pressed',!teacher);}
+$('#m-student').onclick=()=>setMode(false);
+$('#m-teacher').onclick=()=>setMode(true);
+$('#m-class').onclick=e=>{const on=!document.body.classList.contains('class-mode');document.body.classList.toggle('class-mode',on);e.currentTarget.setAttribute('aria-pressed',on);};
+const tabs=['t1','t2','t3'];
+function showTab(id){tabs.forEach(t=>{const sel=t===id;const b=document.getElementById(t);b.setAttribute('aria-selected',sel);b.tabIndex=sel?0:-1;document.getElementById(b.getAttribute('aria-controls')).hidden=!sel;});}
+tabs.forEach((t,i)=>{const b=document.getElementById(t);b.onclick=()=>showTab(t);b.onkeydown=e=>{let n=null;if(e.key==='ArrowRight')n=tabs[(i+1)%3];else if(e.key==='ArrowLeft')n=tabs[(i+2)%3];else if(e.key==='Home')n=tabs[0];else if(e.key==='End')n=tabs[2];if(n){e.preventDefault();showTab(n);document.getElementById(n).focus();}};});
+
+/* links */
+$('#lb-hub').href=LINKS.hub;$('#lb-list').href=VIDEOS.playlist.url;$('#lb-apps').href=LINKS.apps;
+$('#lnk-2prop').href=LINKS.twoProp;$('#lnk-2mean').href=LINKS.twoMean;$('#v-hub').href=LINKS.hub;
+[['#v-2prop','twoProp'],['#v-2mean','twoMean'],['#v-1prop','oneProp'],['#v-1mean','oneMean'],['#v-list','playlist']].forEach(([s,k])=>{const a=$(s);a.href=VIDEOS[k].url;a.textContent='▶ '+VIDEOS[k].title;});
+
+/* ===================== STEP 1 ===================== */
+const s1={i:0,ans:SCEN.map(()=>({v:null,g:null,locked:false}))};
+function cellLabel(k){return `${PROC[k].name}<br><span class="small muted">${PROC[k].app}</span>`;}
+function renderScen(){
+  const sc=SCEN[s1.i],a=s1.ans[s1.i],right=`${sc.v}-${sc.g}`,pick=a.v&&a.g?`${a.v}-${a.g}`:null;
+  const nRight=s1.ans.filter((x,j)=>x.locked&&`${x.v}-${x.g}`===`${SCEN[j].v}-${SCEN[j].g}`).length,nDone=s1.ans.filter(x=>x.locked).length;
+  const cell=k=>{let cls='cell';if(a.locked&&k===right)cls+=' ans';else if(pick===k)cls+=' on';const tag=a.locked&&k===right?'<span class="mark-ok">✓ Answer</span><br>':(!a.locked&&pick===k?'<span class="sr">Your current choice: </span>':'');return `<div class="${cls}">${tag}${cellLabel(k)}</div>`;};
+  let fbHtml='';
+  if(a.locked){
+    const okV=a.v===sc.v,okG=a.g===sc.g,ok=okV&&okG,P=PROC[right];
+    fbHtml=fb(ok,ok?`Yes. ${P.name}.`:`Not quite. This one is a ${P.name}.`,
+      `<div><span class="${okV?'mark-ok':'mark-no'}">${okV?'✓':'✗'}</span> <span class="ax-t"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 2h6l6 6-6 6-6-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="5.6" cy="5.6" r="1.3" fill="currentColor"/></svg>Variable:</span> ${esc(sc.cv)}</div>
+       <div><span class="${okG?'mark-ok':'mark-no'}">${okG?'✓':'✗'}</span> <span class="ax-g"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="5.5" cy="8" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="10.5" cy="8" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>Groups:</span> ${esc(sc.cg)}</div>
+       <div class="small">Art of Stat app: <b>${P.app}</b> · ${vlink(P.video)}</div>`);
+  }
+  const dots=SCEN.map((x,j)=>{const A=s1.ans[j];let c='dot';if(j===s1.i)c+=' cur';if(A.locked)c+=(`${A.v}-${A.g}`===`${x.v}-${x.g}`?' r':' w');return `<button type="button" class="${c}" data-j="${j}" aria-label="Scenario ${j+1}${A.locked?((`${A.v}-${A.g}`===`${x.v}-${x.g}`)?', answered correctly':', answered incorrectly'):''}"${j===s1.i?' aria-current="step"':''}>${j+1}</button>`;}).join('');
+  $('#prog1').textContent=`${nDone}/${SCEN.length} answered`;
+  $('#scen-card').innerHTML=`
+    <div class="row spread"><div class="row"><h3>Scenario ${s1.i+1} of ${SCEN.length}</h3><span class="chip ${sc.tier==='HOT'?'hot':''}">${sc.tier}</span></div><span class="score">${nRight}/${nDone} correct</span></div>
+    <p class="scen">${esc(sc.text)}</p>
+    <div class="zone turn"><span class="ztag">Your turn</span>
+      <div><p class="q"><span class="ax-t"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 2h6l6 6-6 6-6-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="5.6" cy="5.6" r="1.3" fill="currentColor"/></svg>Clue 1.</span> What kind of variable is recorded for each individual?</p>
+        <div class="row" role="group" aria-label="Variable type">
+          <button type="button" class="btn teal" data-v="cat" aria-pressed="${a.v==='cat'}" ${a.locked?'disabled':''}>Categorical</button>
+          <button type="button" class="btn teal" data-v="quant" aria-pressed="${a.v==='quant'}" ${a.locked?'disabled':''}>Quantitative</button></div></div>
+      <div><p class="q"><span class="ax-g"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="5.5" cy="8" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="10.5" cy="8" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>Clue 2.</span> How many groups are we estimating?</p>
+        <div class="row" role="group" aria-label="Number of groups">
+          <button type="button" class="btn gold" data-g="1" aria-pressed="${a.g===1}" ${a.locked?'disabled':''}>One group</button>
+          <button type="button" class="btn gold" data-g="2" aria-pressed="${a.g===2}" ${a.locked?'disabled':''}>Two groups</button></div></div>
+    </div>
+    <div class="grid2" role="group" aria-label="Procedure chart: rows are variable type, columns are number of groups">
+      <div></div><div class="h g"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="5.5" cy="8" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="10.5" cy="8" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>One group</div><div class="h g"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="5.5" cy="8" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="10.5" cy="8" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>Two groups</div>
+      <div class="h t"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 2h6l6 6-6 6-6-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="5.6" cy="5.6" r="1.3" fill="currentColor"/></svg>Categorical</div>${cell('cat-1')}${cell('cat-2')}
+      <div class="h t"><svg class="ico" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 2h6l6 6-6 6-6-6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="5.6" cy="5.6" r="1.3" fill="currentColor"/></svg>Quantitative</div>${cell('quant-1')}${cell('quant-2')}
+    </div>
+    ${a.locked?fbHtml:`<div class="row"><button type="button" class="btn primary" id="lock" ${pick?'':'disabled'}>Lock in ${pick?PROC[pick].name:'my choice'}</button></div>`}
+    <div class="tkey"><span class="lab">Teacher only · answer key</span><div><b>${PROC[right].name}</b>. ${esc(sc.cv)} ${esc(sc.cg)}</div></div>
+    <div class="row spread">
+      <button type="button" class="btn" id="prev" ${s1.i===0?'disabled':''}>← Previous</button>
+      <div class="dots">${dots}</div>
+      <button type="button" class="btn" id="next">${s1.i===SCEN.length-1?'Go to Step 2 →':'Next →'}</button>
+    </div>`;
+  const c=$('#scen-card');
+  c.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{a.v=b.dataset.v;renderScen();c.querySelector(`[data-v="${a.v}"]`).focus();});
+  c.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{a.g=+b.dataset.g;renderScen();c.querySelector(`[data-g="${a.g}"]`).focus();});
+  c.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{s1.i=+b.dataset.j;renderScen();});
+  const lk=$('#lock');if(lk)lk.onclick=()=>{a.locked=true;renderScen();const ok=`${a.v}-${a.g}`===right;say(ok?'Correct. '+PROC[right].name:'Not quite. The answer is '+PROC[right].name);const nx=$('#next');if(nx)nx.focus();};
+  $('#prev').onclick=()=>{s1.i--;renderScen();};
+  $('#next').onclick=()=>{if(s1.i<SCEN.length-1){s1.i++;renderScen();}else{showTab('t2');document.getElementById('t2').focus();}};
+}
+
+/* ===================== STEP 3 ===================== */
+const st=PROBS.map(()=>({app:null,cond:null,level:null,pending:null,predict:{},solved:{},interp:{},msg:'',lo:'',hi:'',write:{}}));
+let cur=0;
+function contains0(r){return r.lo<=0&&r.hi>=0;}
+function direction(p,r){if(r.lo>0)return 'g1';if(r.hi<0)return 'g2';return 'zero';}
+function diagnose(p,L,loS,hiS){
+  let lo=parseFloat(String(loS).replace(/[,%\s]/g,'').replace('−','-')),hi=parseFloat(String(hiS).replace(/[,%\s]/g,'').replace('−','-'));
+  if(!isFinite(lo)||!isFinite(hi))return{ok:false,html:fb(null,'Type both bounds as numbers.','Use a minus sign for negative numbers, like -0.032.')};
+  let note='';
+  if(p.type==='prop'&&(Math.abs(lo)>1||Math.abs(hi)>1)){lo/=100;hi/=100;note='<div class="small">You typed percents, so this page converted them to decimals. Art of Stat reports decimals, like 0.052.</div>';}
+  if(lo>hi)return{ok:false,html:fb(false,'Your lower bound is bigger than your upper bound.','The lower bound is the smaller number. On a negative interval, it is the more negative one.')};
+  const k=key(p,L),t=p.tol,m=(r)=>Math.abs(lo-r.lo)<=t&&Math.abs(hi-r.hi)<=t;
+  if(m(k))return{ok:true,lo:k.lo,hi:k.hi,html:fb(true,`That matches the ${pct(L)}% interval.`,note)};
+  if(m({lo:-k.hi,hi:-k.lo}))return{ok:false,html:fb(false,'Same numbers, opposite signs. Check the group order.',`Enter <b>${esc(p.g1)}</b> as Group 1 and <b>${esc(p.g2)}</b> as Group 2. Then the app computes ${esc(p.g1)} − ${esc(p.g2)}.`+note)};
+  for(const L2 of LEVELS){if(L2!==L&&m(key(p,L2)))return{ok:false,html:fb(false,`Those bounds match the ${pct(L2)}% interval.`,`You picked ${pct(L)}% here. Change <span class="kbd">Confidence Level (%)</span> in Art of Stat to ${pct(L)}.`+note)};}
+  const a=alt(p,L);if(Math.abs(a.lo-k.lo)>t&&m(a))return{ok:false,html:fb(false,'Very close, but the method is different.',p.type==='prop'?'Under <b>Type of Interval</b>, choose <b>Wald</b>.':'Leave the <b>equal variances</b> box unchecked.')};
+  const mid=(lo+hi)/2;
+  if(Math.abs(mid-k.est)<=t){return{ok:false,html:fb(false,'Your center is right, but the width is off.',`Your interval is centered on the point estimate, ${f(k.est,dp(p)+1)}. The margin of error is wrong. Check the confidence level${p.type==='prop'?' and that Type of Interval is Wald':', two-sided, and the equal variances box unchecked'}.`+note)};}
+  if(Math.abs(lo-k.lo)<=4*t&&Math.abs(hi-k.hi)<=4*t)return{ok:false,html:fb(false,'Very close. Check your rounding.',`Copy the bounds from Art of Stat with at least ${dp(p)+1} decimal places.`+note)};
+  if(Math.abs(lo-k.lo)<=t||Math.abs(hi-k.hi)<=t)return{ok:false,html:fb(false,'One bound matches. Check the other one.','Copy both bounds from the same row of the Confidence Interval table.'+note)};
+  return{ok:false,html:fb(false,'Not a match yet.',`Re-check the numbers you typed into Art of Stat. Make sure ${esc(p.g1)} is Group 1${p.type==='prop'?', you entered successes (not failures), and Type of Interval is Wald':', you used standard deviations (not variances), and Enter Data is set to Summary Statistics'}.`+note)};
+}
+function numberLine(p,r){
+  const k99=key(p,0.99),span=Math.max(Math.abs(k99.lo),Math.abs(k99.hi))*1.15,W=600,H=70,X=v=>W/2+(v/span)*(W/2-30);
+  const c0=contains0(r),col=c0?'var(--muted)':'var(--ink)';
+  return `<div class="nl"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Number line: interval from ${f(r.lo,dp(p))} to ${f(r.hi,dp(p))}${c0?', which contains 0':', which does not contain 0'}">
+    <line x1="20" y1="40" x2="${W-20}" y2="40" stroke="var(--muted)" stroke-width="1.5"/>
+    <line x1="${X(0)}" y1="22" x2="${X(0)}" y2="58" stroke="var(--red)" stroke-width="2.5"/>
+    <text x="${X(0)}" y="16" fill="var(--red)" font-family="DM Mono, monospace" font-size="13" text-anchor="middle">0</text>
+    <line x1="${X(r.lo)}" y1="40" x2="${X(r.hi)}" y2="40" stroke="${col}" stroke-width="8" stroke-linecap="round"${c0?' stroke-dasharray="14 5"':''}/>
+    <circle cx="${X((r.lo+r.hi)/2)}" cy="40" r="5" fill="var(--card)" stroke="${col}" stroke-width="2.5"/>
+    <text x="${X(r.lo)}" y="66" fill="var(--muted)" font-family="DM Mono, monospace" font-size="12" text-anchor="middle">${f(r.lo,dp(p))}</text>
+    <text x="${X(r.hi)}" y="66" fill="var(--muted)" font-family="DM Mono, monospace" font-size="12" text-anchor="middle">${f(r.hi,dp(p))}</text>
+  </svg></div>`;
+}
+function plainMeaning(p,r){
+  const isP=p.type==='prop',u=isP?'percentage points':p.unit,sc=v=>isP?f(Math.abs(v)*100,1):f(Math.abs(v),dp(p));
+  if(r.lo>0)return `The ${esc(p.g1)} group is higher by somewhere between ${sc(r.lo)} and ${sc(r.hi)} ${u}.`;
+  if(r.hi<0)return `The ${esc(p.g1)} group is lower by somewhere between ${sc(r.hi)} and ${sc(r.lo)} ${u}.`;
+  return `The ${esc(p.g1)} group could be up to ${sc(r.lo)} ${u} lower or up to ${sc(r.hi)} ${u} higher. A difference of 0 is plausible.`;
+}
+/* critical-value curve: true z or t density, middle C% shaded */
+function tPdf(x,df){return Math.exp(lgamma((df+1)/2)-lgamma(df/2)-0.5*Math.log(df*Math.PI)-((df+1)/2)*Math.log(1+x*x/df));}
+function zPdf(x){return Math.exp(-x*x/2)/Math.sqrt(2*Math.PI);}
+let curveId=0;
+function curveSVG(p,L,ghosts){
+  const k=key(p,L),isT=p.type==='mean',df=k.df,pdf=x=>isT?tPdf(x,df):zPdf(x),c=k.crit;
+  const W=640,H=200,pad=36,base=150,peak=112,mn=-3.6,mx=3.6,X=v=>pad+(v-mn)/(mx-mn)*(W-2*pad),Y=v=>base-pdf(v)/pdf(0)*peak;
+  let line='',fill=`M${X(-c).toFixed(1)},${base}`;
+  for(let i=0;i<=160;i++){const v=mn+i*(mx-mn)/160;line+=(i?'L':'M')+X(v).toFixed(1)+','+Y(v).toFixed(1);}
+  for(let i=0;i<=80;i++){const v=-c+i*2*c/80;fill+='L'+X(v).toFixed(1)+','+Y(v).toFixed(1);}
+  fill+=`L${X(c).toFixed(1)},${base}Z`;
+  const a2=(1-L)/2,cn=isT?'t*':'z*',id='cv'+(++curveId);
+  const gh=(ghosts||[]).map(G=>{const g=key(p,G).crit;return [-g,g].map(v=>`<line x1="${X(v)}" y1="${base}" x2="${X(v)}" y2="${base-peak*0.95}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 4"/>`).join('')+`<text x="${X(g)+4}" y="${base-peak*0.95+4}" fill="var(--muted)" font-family="DM Mono, monospace" font-size="11">${pct(G)}%</text>`;}).join('');
+  const lab=(v,t)=>`<text x="${X(v)}" y="${base+18}" fill="var(--red)" font-family="DM Mono, monospace" font-size="13" text-anchor="middle">${t}</text>`;
+  return `<div class="zone how"><span class="ztag">How it works</span><figure class="curve">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-labelledby="${id}">
+      <path d="${fill}" fill="var(--ink)" fill-opacity="0.12"/>
+      <line x1="${pad}" y1="${base}" x2="${W-pad}" y2="${base}" stroke="var(--muted)" stroke-width="1.5"/>
+      <path d="${line}" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
+      ${gh}
+      <line x1="${X(-c)}" y1="${base}" x2="${X(-c)}" y2="${Y(-c)-14}" stroke="var(--red)" stroke-width="2.5"/>
+      <line x1="${X(c)}" y1="${base}" x2="${X(c)}" y2="${Y(c)-14}" stroke="var(--red)" stroke-width="2.5"/>
+      ${lab(-c,'−'+f(c,3))}${lab(c,'+'+f(c,3))}
+      <text x="${X(0)}" y="${base+18}" fill="var(--muted)" font-family="DM Mono, monospace" font-size="12" text-anchor="middle">0</text>
+      <text x="${X(0)}" y="${base-peak*0.38}" fill="var(--ink)" font-family="DM Sans, sans-serif" font-size="15" font-weight="700" text-anchor="middle">middle ${pct(L)}%</text>
+      <text x="${X(-3.05)}" y="${base-16}" fill="var(--muted)" font-family="DM Mono, monospace" font-size="11" text-anchor="middle">${f(a2,3)}</text>
+      <text x="${X(3.05)}" y="${base-16}" fill="var(--muted)" font-family="DM Mono, monospace" font-size="11" text-anchor="middle">${f(a2,3)}</text>
+      <text x="${W/2}" y="${H-6}" fill="var(--muted)" font-family="DM Sans, sans-serif" font-size="12" text-anchor="middle">${isT?'t distribution':'standard normal (z) distribution'}</text>
+    </svg>
+    <figcaption class="cap" id="${id}">${isT?`t distribution with df ≈ <b>${f(df,2)}</b>`:'Standard normal (z) distribution'}. The middle ${pct(L)}% is shaded. Critical values are <b>${cn} = ±${f(c,3)}</b>, which leaves <b>${f(a2,3)}</b> in each tail.${ghosts&&ghosts.length?` Dashed lines show the critical values for ${ghosts.map(G=>pct(G)+'%').join(' and ')}.`:''}${isT?' With df this large, the t curve is almost the same as z. With small samples it would have heavier tails and a larger t*.':''}</figcaption>
+  </figure></div>`;
+}
+function aosCard(p,L){
+  const isP=p.type==='prop',row=(lab,val,copy=true)=>`<dt>${lab}</dt><dd><span class="mono">${esc(val)}</span>${copy?`<button type="button" class="copy" data-copy="${esc(val)}" aria-label="Copy ${esc(lab)}: ${esc(val)}">Copy</button>`:''}</dd>`;
+  let rows='';
+  rows+=row('Tab','Confidence Interval & Significance Test',false)+row('Enter Data',isP?'Number of Successes':'Summary Statistics',false);
+  [[1,p.g1],[2,p.g2]].forEach(([g,name])=>{
+    rows+=row(`Group ${g} name`,name);
+    if(isP){rows+=row(`Group ${g} successes`,String(p['x'+g]))+row(`Group ${g} sample size`,String(p['n'+g]));}
+    else{rows+=row(`Group ${g} sample size`,String(p['n'+g]))+row(`Group ${g} mean`,String(p['m'+g]))+row(`Group ${g} std. dev.`,String(p['s'+g]));}
+  });
+  rows+=isP?row('Type of Inference','Confidence Interval',false)+row('Type of Interval','Wald',false)+row('Confidence Level (%)',String(pct(L))):row('Type of Inference','Confidence Interval · Two-Sided',false)+row('Confidence Level (%)',String(pct(L)))+row('Equal variances','leave unchecked',false);
+  return `<div class="aos"><span class="ztag">In Art of Stat ↗</span><div class="row spread"><h4>Type these into Art of Stat</h4><a href="${isP?LINKS.twoProp:LINKS.twoMean}" target="_blank" rel="noopener">Open ${isP?'Compare Two Proportions':'Compare Two Means'} ↗</a></div><dl>${rows}</dl></div>`;
+}
+function howGot(p,L){
+  const k=key(p,L),isP=p.type==='prop',cn=isP?'z*':'t*',r4=v=>f(v,4);
+  const est=isP?`p̂₁ − p̂₂ = ${r4(p.x1/p.n1)} − ${r4(p.x2/p.n2)} = ${r4(k.est)}`:`x̄₁ − x̄₂ = ${p.m1} − ${p.m2} = ${r4(k.est)}`;
+  return `<details open class="how"><summary>How it works: how Art of Stat got this</summary><div class="how-got">
+    <div class="row"><span class="k">Point estimate</span><span>${est}</span></div>
+    <div class="row"><span class="k">Standard error</span><span>SE = ${r4(k.se)}</span></div>
+    <div class="row"><span class="k">Critical value</span><span>${cn} = ${f(k.crit,3)}${isP?'':` (df ≈ ${f(k.df,2)})`}</span></div>
+    <div class="row"><span class="k">Margin of error</span><span>${cn} × SE = ${f(k.crit,3)} × ${r4(k.se)} = ${r4(k.me)}</span></div>
+    <div class="row"><span class="k">Interval</span><span>${r4(k.est)} ± ${r4(k.me)} = (${r4(k.lo)}, ${r4(k.hi)})</span></div>
+  </div></details>`;
+}
+function numberLineMulti(p,levels){
+  const k99=key(p,0.99),span=Math.max(Math.abs(k99.lo),Math.abs(k99.hi))*1.15,W=600,gut=56,rowH=30,H=levels.length*rowH+34,X=v=>gut+(W-gut-20)/2+(v/span)*((W-gut-20)/2-24);
+  const d=dp(p),st0=st[cur];
+  const bars=levels.map((L,i)=>{const r=st0.solved[L],y=18+i*rowH,c0=contains0(r),col=c0?'var(--muted)':'var(--ink)';
+    return `<text x="4" y="${y+5}" fill="var(--ink)" font-family="DM Mono, monospace" font-size="13">${pct(L)}%</text>
+      <line x1="${X(r.lo)}" y1="${y}" x2="${X(r.hi)}" y2="${y}" stroke="${col}" stroke-width="8" stroke-linecap="round"${c0?' stroke-dasharray="14 5"':''}/>`;}).join('');
+  const desc=levels.map(L=>{const r=st0.solved[L];return `${pct(L)}%: ${f(r.lo,d)} to ${f(r.hi,d)}${contains0(r)?', contains 0':', excludes 0'}`;}).join('; ');
+  return `<div class="nl"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Intervals at each level. ${desc}">
+    <line x1="${X(0)}" y1="4" x2="${X(0)}" y2="${H-18}" stroke="var(--red)" stroke-width="2.5"/>
+    <text x="${X(0)}" y="${H-4}" fill="var(--red)" font-family="DM Mono, monospace" font-size="12" text-anchor="middle">0</text>${bars}</svg>
+    <p class="small muted">Solid black bars leave out 0. Dashed grey bars include 0. The red line marks 0.</p></div>`;
+}
+function renderList(){
+  const solvedN=st.filter(x=>Object.keys(x.solved).length).length;$('#prog3').textContent=`${solvedN}/${PROBS.length} solved`;
+  $('#plist').innerHTML=PROBS.map((p,i)=>{const n=Object.keys(st[i].solved).length;return `<button type="button" data-i="${i}" aria-current="${i===cur}">${p.id}. ${esc(p.title)}${n?` <span class="ck" aria-label="${n} levels solved">✓${n>1?n:''}</span>`:''}</button>`;}).join('');
+  $('#plist').querySelectorAll('button').forEach(b=>b.onclick=()=>{cur=+b.dataset.i;renderAll();});
+}
+function renderProb(){
+  const p=PROBS[cur],s=st[cur],isP=p.type==='prop',d=dp(p);
+  const tableHtml=isP?`<table><thead><tr><th>Group</th><th>Successes (x)</th><th>Sample size (n)</th><th>p̂</th></tr></thead><tbody>
+      <tr><td>1 · ${esc(p.g1)}</td><td class="num">${p.x1}</td><td class="num">${p.n1}</td><td class="num muted">${f(p.x1/p.n1,4)}</td></tr>
+      <tr><td>2 · ${esc(p.g2)}</td><td class="num">${p.x2}</td><td class="num">${p.n2}</td><td class="num muted">${f(p.x2/p.n2,4)}</td></tr></tbody></table>`
+    :`<table><thead><tr><th>Group</th><th>Mean (x̄)</th><th>Std. dev. (s)</th><th>Sample size (n)</th></tr></thead><tbody>
+      <tr><td>1 · ${esc(p.g1)}</td><td class="num">${p.m1}</td><td class="num">${p.s1}</td><td class="num">${p.n1}</td></tr>
+      <tr><td>2 · ${esc(p.g2)}</td><td class="num">${p.m2}</td><td class="num">${p.s2}</td><td class="num">${p.n2}</td></tr></tbody></table>`;
+  const head=`<div class="row spread"><div class="row"><h3>${p.id}. ${esc(p.title)}</h3><span class="chip ${p.tier==='HOT'?'hot':''}">${p.tier}</span></div><span class="muted small">Data invented for practice</span></div>
+    <p class="scen">${esc(p.text)}</p>
+    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Problem data table">${tableHtml}</div>`;
+  let h='';
+  const part=(L,done,title)=>`<li class="stepbox${done?' done':''}" data-part="${L}"><span class="node" aria-hidden="true">${done?'✓':L}</span><h4 class="lab"><span><span class="sr">Part ${L}: </span>${title}</span>${done?'<span class="state">Done</span>':''}</h4>`;
+  const show=()=>{$('#prob-card').innerHTML=`<div class="pgrid"><div class="pdata">${head}</div><div class="pwork"><ol class="tracker" aria-label="Problem ${p.id} parts">${h}</ol>${teacherKey(p)}</div></div>`;
+    const li=[...$('#prob-card').querySelectorAll('.stepbox')];const c=li.find(x=>!x.classList.contains('done'))||li[li.length-1];if(c){c.setAttribute('aria-current','step');}bindProb();};
+
+  /* A: app */
+  const rightApp=isP?'prop':'mean';
+  h+=part('A',s.app===rightApp,'Which Art of Stat app?')+`<div class="row" role="group" aria-label="Choose app">
+      <button type="button" class="btn pick" data-app="prop" aria-pressed="${s.app==='prop'}">Compare Two Proportions</button>
+      <button type="button" class="btn pick" data-app="mean" aria-pressed="${s.app==='mean'}">Compare Two Means</button></div>`;
+  if(s.app){const ok=s.app===rightApp;h+=ok?fb(true,isP?'Right. Yes/no outcomes in two groups.':'Right. A measured number in two groups.',`<a href="${isP?LINKS.twoProp:LINKS.twoMean}" target="_blank" rel="noopener">Open ${isP?'Compare Two Proportions':'Compare Two Means'} ↗</a> · ${vlink(isP?'twoProp':'twoMean')}`)
+    :fb(false,'Look at the table again.',isP?'The data are counts of successes. That means a categorical variable, so we compare proportions.':'The data are means and standard deviations. That means a quantitative variable, so we compare means.');}
+  h+=`</li>`;
+  if(s.app!==rightApp){show();return;}
+
+  /* B: conditions */
+  const condTxt=isP?`Successes and failures: ${p.x1} and ${p.n1-p.x1} in Group 1, ${p.x2} and ${p.n2-p.x2} in Group 2. All are at least 10.`:`Sample sizes: n₁ = ${p.n1} and n₂ = ${p.n2}. Both are at least 30.`;
+  h+=part('B',s.cond==='yes','Is each sample large enough?')+`<p class="small muted">${isP?'Rule: at least 10 successes and 10 failures in each group.':'Rule: at least 30 in each group, or roughly normal data.'} Both samples are random and independent.</p>
+     <div class="row" role="group" aria-label="Large enough?"><button type="button" class="btn pick" data-cond="yes" aria-pressed="${s.cond==='yes'}">Yes, both groups</button><button type="button" class="btn pick" data-cond="no" aria-pressed="${s.cond==='no'}">No</button></div>`;
+  if(s.cond)h+=s.cond==='yes'?fb(true,'Conditions met.',condTxt):fb(false,'Check the numbers again.',condTxt);
+  h+=`</li>`;
+  if(s.cond!=='yes'){show();return;}
+
+  /* C: level + bounds */
+  const solvedLevels=Object.keys(s.solved).map(Number);
+  h+=part('C',!!(s.level&&s.solved[s.level]),'Choose a level and run it')+`
+     <div class="row" role="group" aria-label="Confidence level">${LEVELS.map(L=>`<button type="button" class="btn pick" data-level="${L}" aria-pressed="${s.level===L}">${pct(L)}%${s.solved[L]?' ✓':''}</button>`).join('')}</div>`;
+  if(s.pending!==null){
+    const base=solvedLevels[solvedLevels.length-1];
+    h+=`<p class="q">Predict first: compared with your ${pct(base)}% interval, will the ${pct(s.pending)}% interval be…</p>
+      <div class="row" role="group" aria-label="Prediction"><button type="button" class="btn pick" data-pred="wider">Wider</button><button type="button" class="btn pick" data-pred="narrower">Narrower</button><button type="button" class="btn pick" data-pred="same">About the same</button></div>`;
+  }else if(s.level){
+    const L=s.level;
+    h+=curveSVG(p,L,solvedLevels.filter(x=>x!==L));
+    if(s.solved[L]){
+      const r=s.solved[L];h+=fb(true,`${pct(L)}% interval: (${f(r.lo,d)}, ${f(r.hi,d)})`,'')+howGot(p,L);
+    }else{
+      h+=aosCard(p,L)+`<div class="inputs"><label for="lo-${cur}">Lower bound<input id="lo-${cur}" inputmode="decimal" autocomplete="off" value="${esc(s.lo)}" placeholder="${isP?'0.000':'0.00'}"></label>
+        <label for="hi-${cur}">Upper bound<input id="hi-${cur}" inputmode="decimal" autocomplete="off" value="${esc(s.hi)}" placeholder="${isP?'0.000':'0.00'}"></label>
+        <button type="button" class="btn primary" id="check">Check my interval</button></div>${s.msg}`;
+    }
+    const pr=s.predict[L];
+    if(pr&&s.solved[L]){
+      const base=pr.base,wB=s.solved[base].hi-s.solved[base].lo,wN=s.solved[L].hi-s.solved[L].lo,truth=L>base?'wider':'narrower',ok=pr.choice===truth;
+      h+=fb(ok,ok?`Your prediction was right: ${truth}.`:`It came out ${truth}.`,`Width went from ${f(wB,d)} to ${f(wN,d)}. ${L>base?'More confidence needs a wider net.':'Less confidence lets us use a narrower net.'}`);
+    }
+  }
+  h+=`</li>`;
+
+  /* D: interpret */
+  if(s.level&&s.solved[s.level]){
+    const L=s.level,r=s.solved[L],it=s.interp[L]||(s.interp[L]={}),dir=direction(p,r);
+    h+=part('D',it.dir===dir,`Interpret the ${pct(L)}% interval`)+`${numberLine(p,r)}
+      <p class="q">Does the interval contain 0?</p>
+      <div class="row" role="group" aria-label="Contains zero"><button type="button" class="btn pick" data-z="yes" aria-pressed="${it.z==='yes'}">Yes</button><button type="button" class="btn pick" data-z="no" aria-pressed="${it.z==='no'}">No</button></div>`;
+    if(it.z){const ok=(it.z==='yes')===contains0(r);h+=ok?fb(true,contains0(r)?'Yes. It runs from negative to positive.':'No. Both bounds have the same sign.',''):fb(false,'Look at the signs of the two bounds.',`Lower ${f(r.lo,d)}, upper ${f(r.hi,d)}.`);
+      if(ok){
+        h+=`<p class="q">So what does the interval tell us?</p><div class="grid" style="display:grid;gap:6px" role="group" aria-label="Meaning">
+          <button type="button" class="btn pick" style="text-align:left" data-dir="g1" aria-pressed="${it.dir==='g1'}">${esc(p.g1)} has higher ${esc(p.param)}.</button>
+          <button type="button" class="btn pick" style="text-align:left" data-dir="g2" aria-pressed="${it.dir==='g2'}">${esc(p.g2)} has higher ${esc(p.param)}.</button>
+          <button type="button" class="btn pick" style="text-align:left" data-dir="zero" aria-pressed="${it.dir==='zero'}">No difference is plausible. We can’t say which is higher.</button></div>`;
+        if(it.dir){const ok2=it.dir===dir;
+          h+=ok2?fb(true,'Exactly.',dir==='zero'?'Zero is inside the interval, so “no difference” is a plausible value.':`Every value in the interval is ${dir==='g1'?'positive':'negative'}, so Group ${dir==='g1'?'1':'2'} is higher.`)
+            :fb(false,'Not this one.',dir==='zero'?'Zero is inside the interval, so the data cannot rule out “no difference.”':`All values are ${r.lo>0?'positive':'negative'}. Since we computed ${esc(p.g1)} − ${esc(p.g2)}, ${r.lo>0?'positive':'negative'} means ${esc(dir==='g1'?p.g1:p.g2)} is higher.`);
+          if(ok2){
+            h+=`<p class="q">Write it in your own words</p><label class="sr" for="w-${cur}-${L}">Your interpretation</label><textarea id="w-${cur}-${L}" placeholder="We are ${pct(L)}% confident that…">${esc(s.write[L]||'')}</textarea>
+              <details><summary>Compare with the course sentence</summary><div class="grid" style="display:grid;gap:8px">
+              <p class="sentence">We are ${pct(L)}% confident that the true difference in ${esc(p.param)} (${esc(p.g1)} − ${esc(p.g2)}) is between ${f(r.lo,d)} and ${f(r.hi,d)}${isP?'':' '+esc(p.unit)}.</p>
+              <p class="muted">In plain terms: ${plainMeaning(p,r)}</p></div></details>`;
+            const left=LEVELS.filter(x=>!s.solved[x]);
+            if(left.length)h+=`<p class="small muted">Next: pick ${left.map(x=>pct(x)+'%').join(' or ')} above and compare.</p>`;
+          }
+        }
+      }
+    }
+    h+=`</li>`;
+  }
+
+  /* E: compare levels */
+  if(solvedLevels.length>=2){
+    const sv=LEVELS.filter(x=>s.solved[x]);
+    const rows=sv.map(x=>{const r=s.solved[x];return `<tr><td>${pct(x)}%</td><td class="num">${f(r.lo,d)}</td><td class="num">${f(r.hi,d)}</td><td class="num">${f(r.hi-r.lo,d)}</td><td>${contains0(r)?'Yes':'No'}</td></tr>`;}).join('');
+    const inc=sv.filter(x=>contains0(s.solved[x])),exc=sv.filter(x=>!contains0(s.solved[x])),flip=inc.length&&exc.length;
+    const hiL=flip?pct(Math.min(...inc)):0,loL=flip?pct(Math.max(...exc)):0;
+    h+=part('E',false,'Compare your levels')+`${numberLineMulti(p,sv)}<div class="tbl-wrap" tabindex="0" role="region" aria-label="Interval comparison table"><table><thead><tr><th>Level</th><th>Lower</th><th>Upper</th><th>Width</th><th>Contains 0?</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="q">Check your thinking</p><p>${flip?`Your conclusion changed with the confidence level. Why does the ${hiL}% interval include 0 when the ${loL}% interval does not? What would you tell a decision-maker about this difference?`:'As the confidence level goes up, what happens to the width? Why does more confidence cost us precision?'}</p></li>`;
+  }
+  show();
+}
+function teacherKey(p){
+  const d=dp(p);
+  const rows=LEVELS.map(L=>{const k=key(p,L);return `<tr><td>${pct(L)}%</td><td class="num">${f(k.est,4)}</td><td class="num">${f(k.se,4)}</td><td class="num">${p.type==='prop'?'z* = ':'t* = '}${f(k.crit,4)}</td><td class="num">${f(k.lo,4)}</td><td class="num">${f(k.hi,4)}</td><td>${contains0(k)?'Yes':'No'}</td></tr>`;}).join('');
+  const k95=key(p,0.95);
+  return ` <div class="tkey"><span class="lab">Teacher only · ${p.type==='prop'?'Wald 2-proportion z-interval':'Welch 2-sample t-interval (df = '+f(k95.df,2)+')'}</span>
+    <div class="tbl-wrap" tabindex="0" role="region" aria-label="Teacher answer key table"><table><thead><tr><th>Level</th><th>Estimate</th><th>SE</th><th>Critical</th><th>Lower</th><th>Upper</th><th>0 inside?</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="small">Accepted within ±${p.tol} of each bound. Answers with swapped groups, a wrong level, or ${p.type==='prop'?'a non-Wald method':'pooled variance'} get specific feedback.</div></div>`;
+}
+function bindProb(){
+  const c=$('#prob-card'),s=st[cur],p=PROBS[cur];
+  c.querySelectorAll('[data-app]').forEach(b=>b.onclick=()=>{s.app=b.dataset.app;renderProb();focusSel(`[data-app="${s.app}"]`);});
+  c.querySelectorAll('[data-cond]').forEach(b=>b.onclick=()=>{s.cond=b.dataset.cond;renderProb();focusSel(`[data-cond="${s.cond}"]`);});
+  c.querySelectorAll('[data-level]').forEach(b=>b.onclick=()=>{
+    const L=+b.dataset.level;s.msg='';s.lo='';s.hi='';
+    if(!s.solved[L]&&Object.keys(s.solved).length){s.pending=L;s.level=null;}else{s.pending=null;s.level=L;}
+    renderProb();focusSel(s.pending!==null?'[data-pred]':`#lo-${cur}`)||focusSel(`[data-level="${L}"]`);});
+  c.querySelectorAll('[data-pred]').forEach(b=>b.onclick=()=>{const solved=Object.keys(s.solved).map(Number);s.predict[s.pending]={choice:b.dataset.pred,base:solved[solved.length-1]};s.level=s.pending;s.pending=null;renderProb();focusSel(`#lo-${cur}`);});
+  const lo=c.querySelector(`#lo-${cur}`),hi=c.querySelector(`#hi-${cur}`);
+  if(lo){lo.oninput=()=>s.lo=lo.value;hi.oninput=()=>s.hi=hi.value;
+    const go=()=>{const r=diagnose(p,s.level,s.lo,s.hi);if(r.ok){s.solved[s.level]={lo:r.lo,hi:r.hi};s.msg='';renderList();renderProb();say(`Correct. ${pct(s.level)} percent interval accepted.`);focusSel('[data-z]');}else{s.msg=r.html;renderProb();say('Not yet. '+(c.querySelector('.fb.no .tag .t')?.textContent||'Check your entries'));focusSel(`#lo-${cur}`);}};
+    c.querySelector('#check').onclick=go;[lo,hi].forEach(i=>i.onkeydown=e=>{if(e.key==='Enter')go();});}
+  c.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{const v=b.dataset.copy;const done=()=>{b.textContent='Copied';say('Copied '+v);setTimeout(()=>{b.textContent='Copy';},1500);};
+    const fallback=()=>{const t=document.createElement('textarea');t.value=v;t.setAttribute('readonly','');t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}t.remove();if(ok)done();else{say('Copy is blocked here. Type '+v+' instead.');}b.focus();};
+    try{navigator.clipboard.writeText(v).then(done,fallback);}catch(e){fallback();}});
+  c.querySelectorAll('[data-z]').forEach(b=>b.onclick=()=>{s.interp[s.level].z=b.dataset.z;renderProb();focusSel(`[data-z="${b.dataset.z}"]`);});
+  c.querySelectorAll('[data-dir]').forEach(b=>b.onclick=()=>{s.interp[s.level].dir=b.dataset.dir;renderProb();focusSel(`[data-dir="${b.dataset.dir}"]`);});
+  const w=c.querySelector('textarea');if(w)w.oninput=()=>{s.write[s.level]=w.value;};
+}
+function focusSel(sel){const el=$('#prob-card').querySelector(sel);if(el){el.focus({preventScroll:false});return true;}return false;}
+function renderAll(){renderList();renderProb();}
+
+renderScen();renderAll();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "sac-two-sample-ci",
+  "version": "1.4.0",
+  "private": true,
+  "description": "STAT C1000 Two-Sample Interval Lab — Santa Ana College",
+  "scripts": {
+    "test": "node tests/stats-check.js && node tests/click-through.js",
+    "test:a11y": "node tests/accessibility.js"
+  },
+  "devDependencies": {
+    "axe-core": "4.10.2",
+    "jsdom": "24.1.3",
+    "playwright": "1.47.2"
+  }
+}

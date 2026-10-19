@@ -1,0 +1,4 @@
+# Netlify serves index.html from the repo root. No build step.
+[build]
+  publish = "."
+  command = ""
